@@ -44,8 +44,6 @@ public class Pig {
         System.out.println(join);
 
         OSCall.pig(join);
-
-        //TODO execute pig script
     }
 
     public Pig groupBy(String...variables) {
