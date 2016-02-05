@@ -1,6 +1,8 @@
 package io.farragolabs.pig;
 
 import com.bol.bidwh.commons.OSCall;
+import io.farragolabs.pig.filter.FilterList;
+import io.farragolabs.pig.filter.IFilter;
 import io.farragolabs.pig.storage.Storage;
 import org.apache.commons.lang.StringUtils;
 
@@ -49,6 +51,14 @@ public class Pig {
     public Pig groupBy(String...variables) {
         String currentVariable = autoAlphabet.next();
         String format = String.format("%s = GROUP %s by %s;", currentVariable, lastVariable, "(" + StringUtils.join(variables, ",") + ")");
+        lastVariable = currentVariable;
+        statements.add(format);
+        return this;
+    }
+
+    public Pig filter(IFilter filter) {
+        String currentVariable = autoAlphabet.next();
+        String format = String.format("%s = FILTER %s by %s;", currentVariable, lastVariable,filter.statement());
         lastVariable = currentVariable;
         statements.add(format);
         return this;

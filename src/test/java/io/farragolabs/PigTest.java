@@ -1,5 +1,6 @@
 package io.farragolabs;
 
+import io.farragolabs.pig.filter.Filter;
 import io.farragolabs.pig.storage.File;
 import io.farragolabs.pig.storage.HBase;
 import org.junit.Test;
@@ -39,12 +40,17 @@ public class PigTest {
     }
 
     @Test
-    public void fileStorageShouldWork()
+    public void fileStorageWithFiltersShouldWork()
     {
         Pig pig = Pig.instance();
 
         pig.load(new File("test_2","first,second",","))
                 .foreachGenerate("first")
+                .filter(
+                        new Filter("first","==","'asd'")
+                                .and("first", "==","'asd'")
+                                .or("first", ">=","'asd'")
+                )
                 .groupBy("first")
                 .orderBy(PigConstants.GROUP)
                 .dump();
