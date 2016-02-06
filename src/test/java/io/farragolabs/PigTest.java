@@ -15,7 +15,6 @@ public class PigTest {
     public void pigLoadFileStatement()
     {
         Pig pig = Pig.instance();
-
         pig.load("test")
                 .dump();
     }
@@ -47,9 +46,9 @@ public class PigTest {
         pig.load(new File("test_2","first,second",","))
                 .foreachGenerate("first")
                 .filter(
-                        new Filter("first","==","'asd'")
-                                .and("first", "==","'asd'")
-                                .or("first", ">=","'asd'")
+                        new Filter("first", "==", "'asd'")
+                                .and("first", "==", "'asd'")
+                                .or("first", ">=", "'asd'")
                 )
                 .groupBy("first")
                 .orderBy(PigConstants.GROUP)
@@ -63,12 +62,24 @@ public class PigTest {
 
         Map<String, String> schema = new HashMap<String, String>();
 
-        pig.load(new HBase("test_2",schema))
+        pig.load(new HBase("test_2", schema))
                 .foreachGenerate("first")
                 .groupBy("first")
                 .orderBy(PigConstants.GROUP)
                 .dump();
     }
 
+    @Test
+    public void udfs()
+    {
+        Pig pig = Pig.instance()
+                .register()
+                .define("TEST_SCORE",TestScore.class);
 
+        pig.load(new File("test_2","first,second",","))
+                .foreachGenerate("TEST_SCORE(first)")
+                .groupBy("first")
+                .orderBy(PigConstants.GROUP)
+                .dump();
+    }
 }
