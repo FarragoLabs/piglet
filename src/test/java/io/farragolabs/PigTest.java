@@ -14,7 +14,7 @@ public class PigTest {
     @Test
     public void pigLoadFileStatement()
     {
-        Pig pig = Pig.instance();
+        Pig pig = Pig.instance("test");
         pig.load("test")
                 .dump();
     }
@@ -22,7 +22,7 @@ public class PigTest {
     @Test
     public void groupByShouldWork()
     {
-        Pig pig = Pig.instance();
+        Pig pig = Pig.instance("test");
         pig.load("test")
                 .groupBy("$0")
                 .dump();
@@ -31,7 +31,7 @@ public class PigTest {
     @Test
     public void orderbyShouldWork()
     {
-        Pig pig = Pig.instance();
+        Pig pig = Pig.instance("test");
         pig.load("test")
                 .groupBy("$0")
                 .orderBy("$0")
@@ -41,7 +41,7 @@ public class PigTest {
     @Test
     public void fileStorageWithFiltersShouldWork()
     {
-        Pig pig = Pig.instance();
+        Pig pig = Pig.instance("test");
 
         pig.load(new File("test_2","first,second",","))
                 .foreachGenerate("first")
@@ -58,7 +58,7 @@ public class PigTest {
     @Test
     public void hbaseStorageShouldWork()
     {
-        Pig pig = Pig.instance();
+        Pig pig = Pig.instance("test");
 
         Map<String, String> schema = new HashMap<String, String>();
 
@@ -72,13 +72,33 @@ public class PigTest {
     @Test
     public void udfs()
     {
-        Pig pig = Pig.instance()
+        Pig pig = Pig.instance("test")
                 .register()
                 .define("TEST_SCORE",TestScore.class);
 
         pig.load(new File("test_2","first,second",","))
                 .foreachGenerate("TEST_SCORE(first)")
                 .groupBy("first")
+                .orderBy(PigConstants.GROUP)
+                .dump();
+    }
+
+
+    @Test
+    public void join()
+    {
+        Pig pig = Pig.instance("test")
+                .register()
+                .define("TEST_SCORE", TestScore.class);
+
+        Pig otherDataSet = Pig.instance("OtherDataSet");
+
+        otherDataSet.load("test").orderBy("$0");
+
+        pig.load(new File("test_2", "first,second", ","))
+                .foreachGenerate("TEST_SCORE(first)")
+                .groupBy("first")
+                .join("first",new Joinable(otherDataSet,"$0"))
                 .orderBy(PigConstants.GROUP)
                 .dump();
     }

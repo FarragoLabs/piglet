@@ -8,34 +8,45 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class Pig {
 
-    private List<String> statements;
+    private String test;
+    private Set<String> statements;
     private AutoAlphabet autoAlphabet;
     private boolean mapreduce;
     private static String lastVariable;
 
-    private Pig(ArrayList<String> statements, AutoAlphabet autoAlphabet) {
+    public Set<String> getStatements() {
+        return statements;
+    }
+
+    public String getLastVariable() {
+        return lastVariable;
+    }
+
+    private Pig(Set<String> statements, AutoAlphabet autoAlphabet, String test) {
 
         this.statements = statements;
         this.autoAlphabet = autoAlphabet;
+        this.test = test;
     }
 
-    public static Pig instance() {
-        return new Pig(new ArrayList<String>(), new AutoAlphabet());
+
+    public static Pig instance(String test) {
+        return new Pig(new LinkedHashSet<String>(), new AutoAlphabet(),test);
     }
 
     public Pig load(Storage storage) {
-        lastVariable = autoAlphabet.next();
+        lastVariable = test + autoAlphabet.next();
         statements.add(String.format("%s = %s", lastVariable, storage.statement()));
         return this;
     }
 
     public Pig load(String fileLocation) {
-        lastVariable = autoAlphabet.next();
+        lastVariable = test + autoAlphabet.next();
         statements.add(String.format("%s = LOAD '%s';", lastVariable, fileLocation));
         return this;
     }
@@ -51,7 +62,7 @@ public class Pig {
     }
 
     public Pig groupBy(String... variables) {
-        String currentVariable = autoAlphabet.next();
+        String currentVariable = test + autoAlphabet.next();
         String format = String.format("%s = GROUP %s by %s;", currentVariable, lastVariable, "(" + StringUtils.join(variables, ",") + ")");
         lastVariable = currentVariable;
         statements.add(format);
@@ -67,7 +78,7 @@ public class Pig {
     }
 
     public Pig orderBy(String... variables) {
-        String currentVariable = autoAlphabet.next();
+        String currentVariable = test + autoAlphabet.next();
         String format = String.format("%s = ORDER %s by %s;", currentVariable, lastVariable, "(" + StringUtils.join(variables, ",") + ")");
         statements.add(format);
         lastVariable = currentVariable;
@@ -76,7 +87,7 @@ public class Pig {
 
     public Pig foreachGenerate(String... variables) {
 
-        String currentVariable = autoAlphabet.next();
+        String currentVariable = test + autoAlphabet.next();
         String format = String.format("%s = FOREACH %s GENERATE %s;", currentVariable, lastVariable, StringUtils.join(variables, ","));
         statements.add(format);
         lastVariable = currentVariable;
@@ -116,6 +127,25 @@ public class Pig {
 
     public Pig register(String path) {
         statements.add("REGISTER " + path);
+        return this;
+    }
+
+    public Pig join(String columnList2, Joinable... joinable) {
+
+        Set<String> sublist = new LinkedHashSet<String>();
+        for (Joinable joiner : joinable) {
+            Pig pig = joiner.getPig();
+            statements.addAll(pig.getStatements());
+            sublist.add(String.format("%s by (%s)",
+                    pig.getLastVariable(),
+                    joiner.getColumn_list()));
+        }
+
+        statements.add(String.format("%s = JOIN %s by (%s), %s",
+                test + autoAlphabet.next(),
+                lastVariable,
+                columnList2,
+                StringUtils.join(sublist, ",")));
         return this;
     }
 }
